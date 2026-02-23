@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   themeColor: '#1e3a5f',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Camarpe',
+  },
+  icons: {
+    apple: '/icon-192.png',
+  },
 };
 
 export default function RootLayout({

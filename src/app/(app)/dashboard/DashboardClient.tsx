@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import PushNotifyPrompt from '@/components/PushNotifyPrompt';
 
 const ORIGEM_LABEL: Record<string, string> = {
   INDICACAO: 'Indicação',
@@ -96,8 +97,10 @@ export default function DashboardClient({
     <div className="space-y-8 pb-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-navy-600 sm:text-3xl">Dashboard</h1>
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-          <span className="px-2 text-sm text-slate-500">Período:</span>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <PushNotifyPrompt />
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+            <span className="px-2 text-sm text-slate-500">Período:</span>
           <Link
             href="/dashboard?period=6"
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
@@ -114,6 +117,7 @@ export default function DashboardClient({
           >
             12 meses
           </Link>
+          </div>
         </div>
       </div>
 

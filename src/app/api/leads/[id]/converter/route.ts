@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth';
+import { sendPushToRoles } from '@/lib/push';
 import { z } from 'zod';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -60,6 +61,14 @@ export async function POST(
       await tx.checklistCompras.create({ data: { projetoId: p.id } });
       return p;
     });
+    await sendPushToRoles(
+      ['COMERCIAL', 'GESTAO', 'ADMIN'],
+      {
+        title: 'Lead converteu em projeto',
+        body: `${lead.nome} virou projeto.`,
+        url: `/projetos/${projeto.id}`,
+      }
+    ).catch(() => {});
     return NextResponse.json(projeto);
   } catch (e) {
     if (e instanceof z.ZodError) {

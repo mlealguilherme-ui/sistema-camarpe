@@ -86,6 +86,20 @@ model Usuario {
   logsStatusProjeto  ProjetoStatusLog[]
   tokensRecuperacao  TokenRecuperacaoSenha[]
   sugestoes          SugestaoMelhoria[]
+  pushSubscriptions  PushSubscription[]
+}
+
+// Push (Web Push) para notificações no PWA
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      Usuario  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Lead {
