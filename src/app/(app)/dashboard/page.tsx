@@ -189,8 +189,8 @@ export default async function DashboardPage({
   const session = await getSession();
   if (!session) redirect('/login');
   if (!['GESTAO', 'COMERCIAL', 'ADMIN'].includes(session.role)) redirect('/producao');
-  const params = await Promise.resolve(searchParams).catch(() => ({}));
-  const period = params?.period === '12' ? 12 : 6;
+  const params = (await Promise.resolve(searchParams).catch(() => ({}))) as { period?: string };
+  const period = params.period === '12' ? 12 : 6;
   const data = await getDashboardData(period);
   return <DashboardClient data={data} period={period} />;
 }

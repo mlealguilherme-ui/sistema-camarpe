@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 import type { OrigemLead, StatusLead } from '@prisma/client';
 
 const ORIGEM: Record<string, string> = {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') as StatusLead | null;
     const origem = searchParams.get('origem') as OrigemLead | null;
     const search = searchParams.get('search')?.trim() || searchParams.get('q')?.trim() || '';
-    const where: { status?: StatusLead; origem?: OrigemLead; OR?: Array<{ nome: { contains: string; mode: 'insensitive' } } | { telefone: { contains: string } }> } } = {};
+    const where: Prisma.LeadWhereInput = {};
     if (status) where.status = status;
     if (origem) where.origem = origem;
     if (search.length > 0) {
