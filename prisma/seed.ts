@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
-import { encrypt } from '../src/lib/encrypt';
 
 const prisma = new PrismaClient();
 
@@ -64,30 +63,7 @@ async function main() {
   }
   console.log('Dados institucionais: ok');
 
-  // Credenciais e acessos (senhas criptografadas) - só cria se ainda não houver nenhuma
-  // ATENÇÃO: Não insira senhas reais no seed. Cadastre as credenciais manualmente pelo sistema.
-  const countCred = await prisma.credencialAcesso.count();
-  if (countCred === 0) {
-    const credenciais = [
-      { categoria: 'E-mail e Contas Principais', servico: 'Conta Microsoft', login: 'email@empresa.com', senha: 'ALTERAR_SENHA' },
-      { categoria: 'E-mail e Contas Principais', servico: 'Gmail (Google)', login: 'email@empresa.com', senha: 'ALTERAR_SENHA' },
-      { categoria: 'Cursos e Treinamentos', servico: 'Hotmart', login: 'email@empresa.com', senha: 'ALTERAR_SENHA' },
-      { categoria: 'Cursos e Treinamentos', servico: 'Instagram', login: null as string | null, senha: 'ALTERAR_SENHA' },
-    ];
-    for (const c of credenciais) {
-      await prisma.credencialAcesso.create({
-        data: {
-          categoria: c.categoria,
-          servico: c.servico,
-          login: c.login,
-          senhaCriptografada: encrypt(c.senha),
-        },
-      });
-    }
-    console.log('Credenciais: criadas com senhas placeholder — altere pelo sistema');
-  }
-
-  // Telefones úteis
+  // Telefones úteis (credenciais: cadastre manualmente em Configuração → Credenciais)
   const contatos = [
     { nome: 'Anderson Central de Serviço', telefone: '38999275417' },
     { nome: 'Diney Serralheiro', telefone: '3899836316' },
