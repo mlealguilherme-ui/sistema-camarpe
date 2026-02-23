@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/web-push": "^3.6.4",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-beautiful-dnd": "^13.1.8",
