@@ -37,48 +37,39 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-const navComercial: NavItem[] = [
-  { href: '/leads', label: 'Leads', icon: Users },
-  { href: '/projetos', label: 'Projetos', icon: FolderKanban },
-  { href: '/producao', label: 'Produção', icon: Factory },
-  { href: '/compras', label: 'Estoque', icon: Package },
-  { href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone },
-  { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navComercial: NavGroup[] = [
+  { label: 'Início', items: [{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+  { label: 'Vendas', items: [{ href: '/leads', label: 'Leads', icon: Users }, { href: '/projetos', label: 'Projetos', icon: FolderKanban }] },
+  { label: 'Operação', items: [{ href: '/producao', label: 'Produção', icon: Factory }, { href: '/compras', label: 'Estoque', icon: Package }] },
+  { label: 'Suporte', items: [{ href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone }, { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb }] },
 ];
 
-const navProducao: NavItem[] = [
-  { href: '/producao', label: 'Produção', icon: Factory },
-  { href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone },
-  { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb },
+const navProducao: NavGroup[] = [
+  { label: 'Início', items: [{ href: '/producao', label: 'Produção', icon: Factory }] },
+  { label: 'Suporte', items: [{ href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone }, { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb }] },
 ];
 
-const navGestao: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads', label: 'Leads', icon: Users },
-  { href: '/projetos', label: 'Projetos', icon: FolderKanban },
-  { href: '/producao', label: 'Produção', icon: Factory },
-  { href: '/compras', label: 'Estoque', icon: Package },
-  { href: '/fluxo-caixa', label: 'Fluxo de caixa', icon: Wallet },
-  { href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone },
-  { href: '/dados-institucionais', label: 'Dados da empresa', icon: Building2 },
-  { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb },
-  { href: '/usuarios', label: 'Usuários', icon: UserCog },
+const navGestao: NavGroup[] = [
+  { label: 'Início', items: [{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+  { label: 'Vendas', items: [{ href: '/leads', label: 'Leads', icon: Users }, { href: '/projetos', label: 'Projetos', icon: FolderKanban }] },
+  { label: 'Operação', items: [{ href: '/producao', label: 'Produção', icon: Factory }, { href: '/compras', label: 'Estoque', icon: Package }] },
+  { label: 'Financeiro', items: [{ href: '/fluxo-caixa', label: 'Fluxo de caixa', icon: Wallet }] },
+  { label: 'Suporte', items: [{ href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone }, { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb }] },
+  { label: 'Configuração', items: [{ href: '/dados-institucionais', label: 'Dados da empresa', icon: Building2 }, { href: '/usuarios', label: 'Usuários', icon: UserCog }] },
 ];
 
-const navAdmin: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads', label: 'Leads', icon: Users },
-  { href: '/projetos', label: 'Projetos', icon: FolderKanban },
-  { href: '/producao', label: 'Produção', icon: Factory },
-  { href: '/compras', label: 'Estoque', icon: Package },
-  { href: '/fluxo-caixa', label: 'Fluxo de caixa', icon: Wallet },
-  { href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone },
-  { href: '/dados-institucionais', label: 'Dados da empresa', icon: Building2 },
-  { href: '/credenciais', label: 'Credenciais', icon: KeyRound },
-  { href: '/importar', label: 'Importar planilhas', icon: Upload },
-  { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb },
-  { href: '/usuarios', label: 'Usuários', icon: UserCog },
+const navAdmin: NavGroup[] = [
+  { label: 'Início', items: [{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+  { label: 'Vendas', items: [{ href: '/leads', label: 'Leads', icon: Users }, { href: '/projetos', label: 'Projetos', icon: FolderKanban }] },
+  { label: 'Operação', items: [{ href: '/producao', label: 'Produção', icon: Factory }, { href: '/compras', label: 'Estoque', icon: Package }] },
+  { label: 'Financeiro', items: [{ href: '/fluxo-caixa', label: 'Fluxo de caixa', icon: Wallet }] },
+  { label: 'Suporte', items: [{ href: '/telefones-uteis', label: 'Telefones úteis', icon: Phone }, { href: '/sugestoes', label: 'Sugestões', icon: Lightbulb }] },
+  { label: 'Configuração', items: [{ href: '/dados-institucionais', label: 'Dados da empresa', icon: Building2 }, { href: '/credenciais', label: 'Credenciais', icon: KeyRound }, { href: '/importar', label: 'Importar planilhas', icon: Upload }, { href: '/usuarios', label: 'Usuários', icon: UserCog }] },
 ];
 
 interface LayoutProps {
@@ -90,7 +81,7 @@ export default function Layout({ children, usuario }: LayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const nav =
+  const navGroups: NavGroup[] =
     usuario.role === 'ADMIN'
       ? navAdmin
       : usuario.role === 'COMERCIAL'
@@ -132,28 +123,37 @@ export default function Layout({ children, usuario }: LayoutProps) {
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-0.5 px-2">
-            {nav.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-              const Icon = item.icon;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`
-                      flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                      ${isActive
-                        ? 'bg-camarpe-500 text-slate-900'
-                        : 'text-slate-300 hover:bg-navy-700 hover:text-white'}
-                    `}
-                  >
-                    <Icon size={20} className="flex-shrink-0" />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
+          <ul className="space-y-4 px-2">
+            {navGroups.map((group) => (
+              <li key={group.label}>
+                <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  {group.label}
+                </p>
+                <ul className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`
+                            flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                            ${isActive
+                              ? 'bg-camarpe-500 text-slate-900'
+                              : 'text-slate-300 hover:bg-navy-700 hover:text-white'}
+                          `}
+                        >
+                          <Icon size={20} className="flex-shrink-0" />
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </li>
+            ))}
           </ul>
         </nav>
         <div className="border-t border-navy-700 p-2">

@@ -79,9 +79,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </form>
-          <p className="mt-4 text-center text-xs text-slate-500">
-            Use o seed para criar usuários (dev): POST /api/seed. Senha: camarpe123
-          </p>
         </div>
       </div>
     </div>

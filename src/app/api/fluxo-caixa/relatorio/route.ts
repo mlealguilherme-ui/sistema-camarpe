@@ -39,9 +39,20 @@ export async function GET(request: NextRequest) {
     // Entradas dos pagamentos de projetos no mês (já realizados)
     const pagamentos = await prisma.pagamento.findMany({
       where: { data: { gte: start, lte: end } },
-      select: { valor: true },
+      select: { id: true, valor: true, data: true, tipo: true, projeto: { select: { nome: true } } },
+      orderBy: { data: 'asc' },
     });
     const entradasProjetos = pagamentos.reduce((acc, p) => acc + Number(p.valor), 0);
+
+    const pagamentosProjetosJson = pagamentos.map((p) => ({
+      id: p.id,
+      tipo: 'ENTRADA' as const,
+      valor: Number(p.valor),
+      data: p.data?.toISOString() ?? new Date().toISOString(),
+      descricao: `Pagamento projeto: ${p.projeto.nome}`,
+      origem: 'projeto' as const,
+      projetoNome: p.projeto.nome,
+    }));
 
     const movimentacoesJson = movimentacoes.map((mov) => ({
       id: mov.id,
@@ -65,6 +76,7 @@ export async function GET(request: NextRequest) {
       saldoPrevisto: entradasPrevisto + entradasProjetos - saidasPrevisto - saidasPago,
       saldoRealizado: entradasPago + entradasProjetos - saidasPago,
       movimentacoes: movimentacoesJson,
+      pagamentosProjetos: pagamentosProjetosJson,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Erro';

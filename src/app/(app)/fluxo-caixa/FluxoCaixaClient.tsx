@@ -49,6 +49,7 @@ export default function FluxoCaixaClient() {
     entradasPrevisto?: number;
     entradasProjetos?: number;
     movimentacoes?: { id: string; tipo: string; valor: number; status: string; data: string; descricao: string; categoria: string | null }[];
+    pagamentosProjetos?: { id: string; tipo: 'ENTRADA'; valor: number; data: string; descricao: string; origem: 'projeto'; projetoNome: string }[];
   } | null>(null);
   const CAIXA_INICIAL_KEY = 'fluxo-caixa-inicial';
   const [caixaInicial, setCaixaInicial] = useState(0);
@@ -84,7 +85,7 @@ export default function FluxoCaixaClient() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [mesFiltro, aba]);
+  }, [mesFiltro]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -187,9 +188,63 @@ export default function FluxoCaixaClient() {
     return <div className="card">Carregando...</div>;
   }
 
+  const entradasList = [
+    ...(lancamentos.filter((m) => m.tipo === 'ENTRADA')),
+    ...(relatorio?.pagamentosProjetos ?? []).map((p) => ({
+      id: p.id,
+      tipo: 'ENTRADA' as const,
+      valor: p.valor,
+      data: p.data,
+      dataVencimento: null as string | null,
+      dataPagamento: p.data,
+      categoria: null as string | null,
+      descricao: p.descricao,
+      referenciaSalario: null as string | null,
+      status: 'PAGO' as const,
+      projetoId: null as string | null,
+      projeto: { id: '', nome: p.projetoNome },
+    })),
+  ].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  const saidasList = lancamentos.filter((m) => m.tipo === 'SAIDA').sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">Fluxo de caixa</h1>
+
+      {/* Resumo do mês */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center gap-4">
+          <span className="text-sm font-medium text-slate-600">Resumo do mês</span>
+          <input
+            type="month"
+            className="input w-40"
+            value={mesFiltro}
+            onChange={(e) => setMesFiltro(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+            <p className="text-xs text-slate-500">Entradas</p>
+            <p className="text-lg font-bold text-green-700">{fmt(relatorio?.entradasTotalRealizado ?? 0)}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+            <p className="text-xs text-slate-500">Saídas realizadas</p>
+            <p className="text-lg font-bold text-red-700">{fmt(relatorio?.saidasPago ?? 0)}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+            <p className="text-xs text-slate-500">Saídas previstas</p>
+            <p className="text-lg font-bold text-amber-700">{fmt(relatorio?.saidasPrevisto ?? 0)}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+            <p className="text-xs text-slate-500">Saldo do mês</p>
+            <p className="text-lg font-bold text-camarpe-700">{fmt(relatorio?.saldoRealizado ?? 0)}</p>
+          </div>
+          <div className="rounded-lg border border-camarpe-200 bg-camarpe-50/50 p-3">
+            <p className="text-xs text-camarpe-800">Entradas de projetos</p>
+            <p className="text-lg font-bold text-camarpe-700">{fmt(relatorio?.entradasProjetos ?? 0)}</p>
+          </div>
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2 border-b border-slate-200">
         <button
@@ -350,37 +405,71 @@ export default function FluxoCaixaClient() {
             </form>
           )}
 
-          <div className="card overflow-hidden p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-2 text-left font-medium text-slate-700">Data</th>
-                    <th className="px-4 py-2 text-left font-medium text-slate-700">Descrição</th>
-                    <th className="px-4 py-2 text-left font-medium text-slate-700">Categoria</th>
-                    <th className="px-4 py-2 text-left font-medium text-slate-700">Status</th>
-                    <th className="px-4 py-2 text-right font-medium text-slate-700">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lancamentos.map((m) => (
-                    <tr key={m.id} className="border-b border-slate-100">
-                      <td className="px-4 py-2">{new Date(m.data).toLocaleDateString('pt-BR')}</td>
-                      <td className="px-4 py-2">
-                        {m.descricao}
-                        {m.projeto && <span className="ml-1 text-slate-500">({m.projeto.nome})</span>}
-                      </td>
-                      <td className="px-4 py-2">{m.categoria ? CATEGORIA_LABEL[m.categoria] ?? m.categoria : '—'}</td>
-                      <td className="px-4 py-2">{m.status === 'PAGO' ? 'Pago' : 'Previsto'}</td>
-                      <td className={`px-4 py-2 text-right font-medium ${m.tipo === 'ENTRADA' ? 'text-green-700' : 'text-red-700'}`}>
-                        {m.tipo === 'ENTRADA' ? '+' : '-'}{fmt(m.valor)}
-                      </td>
+          <div className="space-y-6">
+            <div className="card overflow-hidden p-0">
+              <h3 className="border-b border-slate-200 bg-green-50/70 px-4 py-2.5 text-sm font-semibold text-green-800">
+                Entradas
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Data</th>
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Descrição</th>
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Origem</th>
+                      <th className="px-4 py-2 text-right font-medium text-slate-700">Valor</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {entradasList.map((m) => (
+                      <tr key={m.id} className="border-b border-slate-100">
+                        <td className="px-4 py-2">{new Date(m.data).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-4 py-2">{m.descricao}</td>
+                        <td className="px-4 py-2 text-slate-500">
+                          {m.projeto?.nome ? `Projeto: ${m.projeto.nome}` : '—'}
+                        </td>
+                        <td className="px-4 py-2 text-right font-medium text-green-700">+{fmt(m.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {entradasList.length === 0 && <p className="p-4 text-slate-500">Nenhuma entrada neste mês.</p>}
             </div>
-            {lancamentos.length === 0 && <p className="p-4 text-slate-500">Nenhum lançamento neste mês.</p>}
+
+            <div className="card overflow-hidden p-0">
+              <h3 className="border-b border-slate-200 bg-red-50/70 px-4 py-2.5 text-sm font-semibold text-red-800">
+                Saídas
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Data</th>
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Descrição</th>
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Categoria</th>
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Status</th>
+                      <th className="px-4 py-2 text-right font-medium text-slate-700">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {saidasList.map((m) => (
+                      <tr key={m.id} className="border-b border-slate-100">
+                        <td className="px-4 py-2">{new Date(m.data).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-4 py-2">
+                          {m.descricao}
+                          {m.projeto && <span className="ml-1 text-slate-500">({m.projeto.nome})</span>}
+                        </td>
+                        <td className="px-4 py-2">{m.categoria ? CATEGORIA_LABEL[m.categoria] ?? m.categoria : '—'}</td>
+                        <td className="px-4 py-2">{m.status === 'PAGO' ? 'Pago' : 'Previsto'}</td>
+                        <td className="px-4 py-2 text-right font-medium text-red-700">-{fmt(m.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {saidasList.length === 0 && <p className="p-4 text-slate-500">Nenhuma saída neste mês.</p>}
+            </div>
           </div>
         </section>
       )}
