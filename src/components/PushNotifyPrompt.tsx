@@ -28,9 +28,10 @@ export default function PushNotifyPrompt() {
       if (!resKey.ok) throw new Error('Chave push indisponível');
       const { publicKey } = await resKey.json();
       if (!publicKey) throw new Error('Chave não configurada');
+      const keyBytes = urlBase64ToUint8Array(publicKey);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
+        applicationServerKey: keyBytes as BufferSource,
       });
       const res = await fetch('/api/push/subscribe', {
         method: 'POST',
