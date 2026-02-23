@@ -8,11 +8,12 @@ ide:
   selected:
     - claude-code
     - codex
+    - cursor
   configs:
     vscode: false
     codex: true
     gemini: false
-    cursor: false
+    cursor: true
     github-copilot: false
     antigravity: false
     zed: false

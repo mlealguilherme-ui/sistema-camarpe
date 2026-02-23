@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { PageLoader, EmptyState } from '@/components/PageLoader';
 
 const ORIGEM: Record<string, string> = {
   INDICACAO: 'Indicação',
@@ -108,7 +109,14 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <PageLoader />
+      ) : leads.length === 0 ? (
+        <EmptyState
+          title="Nenhum lead encontrado"
+          description="Cadastre o primeiro lead para começar a acompanhar o funil."
+          actionLabel="Novo lead"
+          actionHref="/leads/novo"
+        />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse rounded-lg border border-slate-200 bg-white">
@@ -170,9 +178,6 @@ export default function LeadsPage() {
               ))}
             </tbody>
           </table>
-          {leads.length === 0 && (
-            <p className="p-6 text-center text-slate-500">Nenhum lead encontrado.</p>
-          )}
         </div>
       )}
     </div>

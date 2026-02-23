@@ -3,6 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth';
 import { z } from 'zod';
 import type { StatusLead } from '@prisma/client';
+import path from 'path';
+import { unlink } from 'fs/promises';
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 
 const origemEnum = ['INDICACAO', 'INSTAGRAM', 'ARQUITETO', 'FACEBOOK', 'SITE', 'AMIGO', 'FAMILIAR', 'PARCEIRO'] as const;
 
@@ -108,14 +112,48 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireAuth();
     requireRole(session, ['COMERCIAL', 'GESTAO', 'ADMIN']);
     const { id } = await params;
-    await prisma.lead.delete({ where: { id } });
+    let excluirProjetos = false;
+    try {
+      const body = await request.json();
+      excluirProjetos = body?.excluirProjetos === true;
+    } catch {
+      // no body or invalid JSON
+    }
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: {
+        projetos: { include: { arquivos: true } },
+      },
+    });
+    if (!lead) return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 });
+    if (lead.projetos.length > 0 && !excluirProjetos) {
+      return NextResponse.json(
+        { error: `Lead possui ${lead.projetos.length} projeto(s). Envie excluirProjetos: true para excluir junto.` },
+        { status: 400 }
+      );
+    }
+    for (const projeto of lead.projetos) {
+      for (const arq of projeto.arquivos) {
+        try {
+          await unlink(path.join(UPLOAD_DIR, arq.caminho));
+        } catch {
+          // ignore if file missing
+        }
+      }
+    }
+    await prisma.$transaction(async (tx) => {
+      if (lead.projetos.length > 0) {
+        await tx.projeto.deleteMany({ where: { leadId: id } });
+      }
+      await tx.lead.delete({ where: { id } });
+    });
     return NextResponse.json({ ok: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Erro';

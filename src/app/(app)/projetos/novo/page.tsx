@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 export default function NovoProjetoPage() {
   const router = useRouter();
+  const toast = useToast();
   const [nome, setNome] = useState('');
   const [valorTotal, setValorTotal] = useState('');
   const [custoMateriais, setCustoMateriais] = useState('');
@@ -68,6 +70,7 @@ export default function NovoProjetoPage() {
         setLoading(false);
         return;
       }
+      toast.showSuccess('Projeto criado.');
       router.push(`/projetos/${data.id}`);
       router.refresh();
     } catch {

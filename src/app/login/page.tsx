@@ -36,12 +36,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-navy-800 px-4">
       <div className="w-full max-w-sm">
-        <div className="card">
-          <h1 className="mb-6 text-center text-xl font-bold text-camarpe-800">
-            Sistema Camarpe
+        <div className="rounded-xl border border-navy-600 bg-white p-6 shadow-xl">
+          <p className="text-center text-xs font-medium uppercase tracking-widest text-slate-500">Grupo</p>
+          <h1 className="font-script mb-6 text-center text-3xl font-semibold text-navy-800">
+            Camarpe
           </h1>
+          <p className="mb-6 text-center text-sm text-slate-600">Sistema de gestão</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">E-mail</label>
@@ -72,7 +74,7 @@ export default function LoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
             <p className="text-center text-sm">
-              <Link href="/esqueci-senha" className="text-camarpe-600 hover:underline">
+              <Link href="/esqueci-senha" className="text-camarpe-600 hover:text-camarpe-500 hover:underline">
                 Esqueci minha senha
               </Link>
             </p>

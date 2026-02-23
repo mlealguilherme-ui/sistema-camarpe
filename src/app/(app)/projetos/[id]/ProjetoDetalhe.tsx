@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Lightbulb } from 'lucide-react';
+import { useToast } from '@/components/Toast';
 
 const STATUS_OPCOES = [
   { value: 'AGUARDANDO_ARQUIVOS', label: 'Aguardando arquivos' },
@@ -39,7 +41,10 @@ interface ProjetoDetalheProps {
 }
 
 export default function ProjetoDetalhe({ projeto, onUpdate }: ProjetoDetalheProps) {
+  const router = useRouter();
+  const toast = useToast();
   const [aba, setAba] = useState<'resumo' | 'financeiro' | 'arquivos' | 'compras'>('resumo');
+  const [excluindoProjeto, setExcluindoProjeto] = useState(false);
   const [statusProducao, setStatusProducao] = useState(
     (projeto.statusProducao as string) || 'AGUARDANDO_ARQUIVOS'
   );
@@ -385,13 +390,41 @@ export default function ProjetoDetalhe({ projeto, onUpdate }: ProjetoDetalheProp
             </span>
           )}
         </div>
-        <Link
-          href={`/sugestoes?projetoId=${id}&etapa=${encodeURIComponent(ETAPA_LABEL[statusProducao] ?? statusProducao)}`}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          <Lightbulb size={18} />
-          Registrar sugestão
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/sugestoes?projetoId=${id}&etapa=${encodeURIComponent(ETAPA_LABEL[statusProducao] ?? statusProducao)}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            <Lightbulb size={18} />
+            Registrar sugestão
+          </Link>
+          <button
+            type="button"
+            className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-50"
+            disabled={excluindoProjeto}
+            onClick={async () => {
+              if (!confirm('Excluir este projeto? Esta ação não pode ser desfeita.')) return;
+              setExcluindoProjeto(true);
+              try {
+                const res = await fetch(`/api/projetos/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                  const data = await res.json();
+                  toast.showError(data.error || 'Erro ao excluir');
+                  setExcluindoProjeto(false);
+                  return;
+                }
+                toast.showSuccess('Projeto excluído.');
+                router.push('/projetos');
+                router.refresh();
+              } catch {
+                toast.showError('Erro ao excluir');
+                setExcluindoProjeto(false);
+              }
+            }}
+          >
+            {excluindoProjeto ? 'Excluindo...' : 'Excluir projeto'}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-slate-200">

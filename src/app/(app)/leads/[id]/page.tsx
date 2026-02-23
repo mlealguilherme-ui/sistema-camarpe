@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 const ORIGEM: Record<string, string> = {
   INDICACAO: 'Indicação',
@@ -66,6 +67,7 @@ interface Lead {
 export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const id = params.id as string;
   const [lead, setLead] = useState<Lead | null>(null);
   const [edit, setEdit] = useState(false);
@@ -94,6 +96,8 @@ export default function LeadDetailPage() {
   const [linkOrcamento, setLinkOrcamento] = useState('');
   const [linkProjeto3d, setLinkProjeto3d] = useState('');
   const [dataUltimoContato, setDataUltimoContato] = useState('');
+  const [showExcluirModal, setShowExcluirModal] = useState(false);
+  const [excluindoLead, setExcluindoLead] = useState(false);
 
   useEffect(() => {
     fetch(`/api/leads/${id}`)
@@ -156,6 +160,7 @@ export default function LeadDetailPage() {
       }
       setLead({ ...data, atividades: data.atividades ?? lead?.atividades });
       setEdit(false);
+      toast.showSuccess('Lead salvo.');
       router.refresh();
     } catch {
       setErro('Erro ao salvar');
@@ -200,11 +205,38 @@ export default function LeadDetailPage() {
         setLoading(false);
         return;
       }
+      toast.showSuccess('Projeto criado.');
       router.push(`/projetos/${data.id}`);
       router.refresh();
     } catch {
       setErro('Erro ao criar projeto');
       setLoading(false);
+    }
+  }
+
+  async function handleExcluirLead(excluirProjetos: boolean) {
+    setErro('');
+    setExcluindoLead(true);
+    try {
+      const res = await fetch(`/api/leads/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ excluirProjetos }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErro(data.error || 'Erro ao excluir');
+        setExcluindoLead(false);
+        setShowExcluirModal(false);
+        return;
+      }
+      toast.showSuccess('Lead excluído.');
+      router.push('/leads');
+      router.refresh();
+    } catch {
+      setErro('Erro ao excluir');
+      setExcluindoLead(false);
+      setShowExcluirModal(false);
     }
   }
 
@@ -229,9 +261,21 @@ export default function LeadDetailPage() {
           <h1 className="text-2xl font-bold text-slate-800">{lead.nome}</h1>
         </div>
         {!edit ? (
-          <button type="button" className="btn-secondary" onClick={() => setEdit(true)}>
-            Editar
-          </button>
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={() => setEdit(true)}>
+              Editar
+            </button>
+            <button
+              type="button"
+              className="rounded border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+              onClick={() => {
+                if ((lead.projetos?.length ?? 0) > 0) setShowExcluirModal(true);
+                else if (confirm('Excluir este lead?')) handleExcluirLead(false);
+              }}
+            >
+              Excluir lead
+            </button>
+          </div>
         ) : (
           <div className="flex gap-2">
             <button type="button" className="btn-primary" onClick={handleSave} disabled={loading}>
@@ -416,6 +460,34 @@ export default function LeadDetailPage() {
           <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{erro}</p>
         )}
       </div>
+
+      {showExcluirModal && (lead.projetos?.length ?? 0) > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => !excluindoLead && setShowExcluirModal(false)}>
+          <div className="card max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-4">
+              Este lead tem <strong>{lead.projetos?.length}</strong> projeto(s). Deseja excluir os projetos também?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn-primary bg-red-600 hover:bg-red-700"
+                disabled={excluindoLead}
+                onClick={() => handleExcluirLead(true)}
+              >
+                {excluindoLead ? 'Excluindo...' : 'Excluir lead e projetos'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={excluindoLead}
+                onClick={() => setShowExcluirModal(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="mb-3 flex items-center justify-between">

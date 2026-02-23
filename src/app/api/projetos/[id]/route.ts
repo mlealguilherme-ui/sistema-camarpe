@@ -4,6 +4,10 @@ import { requireAuth, requireRole } from '@/lib/auth';
 import { z } from 'zod';
 import { Decimal } from '@prisma/client/runtime/library';
 import type { StatusProducao } from '@prisma/client';
+import path from 'path';
+import { unlink } from 'fs/promises';
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 
 const updateSchema = z.object({
   nome: z.string().min(1).optional(),
@@ -185,6 +189,35 @@ export async function PATCH(
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: e.flatten() }, { status: 400 });
     }
+    const msg = e instanceof Error ? e.message : 'Erro';
+    const status = msg === 'Não autorizado' ? 401 : msg === 'Acesso negado' ? 403 : 500;
+    return NextResponse.json({ error: msg }, { status });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireAuth();
+    requireRole(session, ['COMERCIAL', 'GESTAO', 'ADMIN']);
+    const { id } = await params;
+    const projeto = await prisma.projeto.findUnique({
+      where: { id },
+      include: { arquivos: true },
+    });
+    if (!projeto) return NextResponse.json({ error: 'Projeto não encontrado' }, { status: 404 });
+    for (const arq of projeto.arquivos) {
+      try {
+        await unlink(path.join(UPLOAD_DIR, arq.caminho));
+      } catch {
+        // ignore if file missing
+      }
+    }
+    await prisma.projeto.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
     const msg = e instanceof Error ? e.message : 'Erro';
     const status = msg === 'Não autorizado' ? 401 : msg === 'Acesso negado' ? 403 : 500;
     return NextResponse.json({ error: msg }, { status });

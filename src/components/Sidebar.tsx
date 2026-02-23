@@ -70,7 +70,7 @@ export function Sidebar({
     <>
       <button
         type="button"
-        className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-camarpe-primary text-white"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-navy-600 text-white"
         onClick={() => setOpen((o) => !o)}
       >
         {open ? <X size={24} /> : <Menu size={24} />}
@@ -78,7 +78,7 @@ export function Sidebar({
       <aside
         className={`
           fixed md:static inset-y-0 left-0 z-40
-          w-64 bg-camarpe-primary text-white flex flex-col
+          w-64 bg-navy-800 text-white flex flex-col
           transform transition-transform md:transform-none
           ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}

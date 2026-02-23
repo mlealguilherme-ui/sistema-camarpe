@@ -107,19 +107,19 @@ export default function Layout({ children, usuario }: LayoutProps) {
 
   return (
     <ToastProvider>
-    <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar - desktop: fixo; mobile: overlay */}
+    <div className="flex min-h-screen bg-slate-100">
+      {/* Sidebar - azul escuro da marca (logo Grupo Camarpe) */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 w-64 flex flex-col
-          bg-slate-800 text-white
+          bg-navy-800 text-white
           transition-transform duration-200 ease-out
           lg:static lg:translate-x-0 lg:flex-shrink-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
-        <div className="flex h-14 items-center justify-between border-b border-slate-700 px-4 lg:justify-center">
-          <Link href="/dashboard" className="text-lg font-semibold text-white" onClick={() => setSidebarOpen(false)}>
+        <div className="flex h-14 items-center justify-between border-b border-navy-700 px-4 lg:justify-center">
+          <Link href="/dashboard" className="font-script text-2xl font-semibold tracking-wide text-camarpe-400" onClick={() => setSidebarOpen(false)}>
             Camarpe
           </Link>
           <button
@@ -144,8 +144,8 @@ export default function Layout({ children, usuario }: LayoutProps) {
                     className={`
                       flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
                       ${isActive
-                        ? 'bg-camarpe-600 text-white'
-                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'}
+                        ? 'bg-camarpe-500 text-slate-900'
+                        : 'text-slate-300 hover:bg-navy-700 hover:text-white'}
                     `}
                   >
                     <Icon size={20} className="flex-shrink-0" />
@@ -156,11 +156,11 @@ export default function Layout({ children, usuario }: LayoutProps) {
             })}
           </ul>
         </nav>
-        <div className="border-t border-slate-700 p-2">
+        <div className="border-t border-navy-700 p-2">
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-navy-700 hover:text-white"
           >
             <LogOut size={20} />
             Sair
@@ -227,18 +227,18 @@ function Footer() {
     <footer className="mt-auto border-t border-slate-200 bg-white px-4 py-3 text-center text-sm text-slate-500">
       {dados.telefone && (
         <span className="mr-4">
-          <a href={`https://wa.me/55${dados.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-camarpe-600">
+          <a href={`https://wa.me/55${dados.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-camarpe-500">
             {dados.telefone}
           </a>
         </span>
       )}
       {dados.site && (
-        <a href={dados.site.startsWith('http') ? dados.site : `https://${dados.site}`} target="_blank" rel="noopener noreferrer" className="mr-4 hover:text-camarpe-600">
+        <a href={dados.site.startsWith('http') ? dados.site : `https://${dados.site}`} target="_blank" rel="noopener noreferrer" className="mr-4 hover:text-camarpe-500">
           {dados.site}
         </a>
       )}
       {dados.instagram && (
-        <a href={`https://instagram.com/${dados.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-camarpe-600">
+        <a href={`https://instagram.com/${dados.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-camarpe-500">
           {dados.instagram}
         </a>
       )}

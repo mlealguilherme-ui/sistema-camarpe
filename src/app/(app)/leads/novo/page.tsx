@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 const ORIGEM = [
   { value: 'INDICACAO', label: 'Indicação' },
@@ -17,6 +18,7 @@ const ORIGEM = [
 
 export default function NovoLeadPage() {
   const router = useRouter();
+  const toast = useToast();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -40,6 +42,7 @@ export default function NovoLeadPage() {
         setLoading(false);
         return;
       }
+      toast.showSuccess('Lead criado.');
       router.push(`/leads/${data.id}`);
       router.refresh();
     } catch {

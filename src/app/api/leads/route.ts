@@ -29,9 +29,11 @@ export async function GET(request: NextRequest) {
     const where: { status?: StatusLead; origem?: OrigemLead } = {};
     if (status) where.status = status;
     if (origem) where.origem = origem;
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '200', 10)));
     const leads = await prisma.lead.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
+      take: limit,
       include: { projetos: { select: { id: true, nome: true } } },
     });
     return NextResponse.json(leads);

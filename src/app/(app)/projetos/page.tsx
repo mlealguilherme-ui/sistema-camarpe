@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { PageLoader, EmptyState } from '@/components/PageLoader';
 
 const STATUS: Record<string, string> = {
   AGUARDANDO_ARQUIVOS: 'Aguardando arquivos',
@@ -96,7 +97,14 @@ export default function ProjetosPage() {
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <PageLoader />
+      ) : projetos.length === 0 ? (
+        <EmptyState
+          title="Nenhum projeto cadastrado"
+          description="Crie um projeto a partir de um lead ou diretamente."
+          actionLabel="Novo projeto"
+          actionHref="/projetos/novo"
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projetos.map((p) => {
@@ -130,9 +138,6 @@ export default function ProjetosPage() {
             );
           })}
         </div>
-      )}
-      {!loading && projetos.length === 0 && (
-        <p className="text-center text-slate-500">Nenhum projeto cadastrado.</p>
       )}
     </div>
   );
