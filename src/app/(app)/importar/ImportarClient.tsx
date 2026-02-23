@@ -51,6 +51,8 @@ export default function ImportarClient() {
     }
   }
 
+  const templateUrl = (tipo: string) => `/api/import/template?tipo=${tipo}`;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">Importar planilhas</h1>
@@ -58,6 +60,25 @@ export default function ImportarClient() {
         Envie os 4 CSVs na ordem: <strong>Clientes</strong>, <strong>Orçamentos</strong>, <strong>Produção</strong> e <strong>Financeiro</strong>.
         Pode enviar só alguns; a importação usa a ordem interna (clientes primeiro, depois orçamentos, produção e financeiro).
       </p>
+
+      <div className="card max-w-2xl">
+        <h2 className="mb-2 font-semibold text-slate-800">Templates CSV</h2>
+        <p className="mb-3 text-sm text-slate-500">Baixe o CSV com os cabeçalhos esperados e preencha com seus dados.</p>
+        <div className="flex flex-wrap gap-2">
+          <a href={templateUrl('clientes')} download className="btn-secondary text-sm" target="_blank" rel="noopener noreferrer">
+            Template Clientes
+          </a>
+          <a href={templateUrl('orcamentos')} download className="btn-secondary text-sm" target="_blank" rel="noopener noreferrer">
+            Template Orçamentos
+          </a>
+          <a href={templateUrl('producao')} download className="btn-secondary text-sm" target="_blank" rel="noopener noreferrer">
+            Template Produção
+          </a>
+          <a href={templateUrl('financeiro')} download className="btn-secondary text-sm" target="_blank" rel="noopener noreferrer">
+            Template Financeiro
+          </a>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="card max-w-2xl space-y-4">
         <div>
@@ -115,13 +136,12 @@ export default function ImportarClient() {
             </ul>
           )}
           {result.erros && result.erros.length > 0 && (
-            <div className="mt-2">
-              <p className="text-sm font-medium text-amber-700">Avisos / não importados:</p>
-              <ul className="mt-1 list-inside list-disc text-sm text-amber-800">
-                {result.erros.slice(0, 10).map((err, i) => (
+            <div className="mt-3">
+              <p className="text-sm font-medium text-amber-700">Erros por linha/registro (quando disponível):</p>
+              <ul className="mt-1.5 max-h-60 list-inside list-disc overflow-y-auto rounded border border-amber-200 bg-amber-50/50 px-3 py-2 text-sm text-amber-800">
+                {result.erros.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
-                {result.erros.length > 10 && <li>… e mais {result.erros.length - 10}</li>}
               </ul>
             </div>
           )}

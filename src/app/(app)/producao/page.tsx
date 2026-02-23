@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/components/Toast';
 
 const ETAPAS_ORDEM: { id: string; titulo: string; short: string }[] = [
@@ -37,15 +37,25 @@ interface Projeto {
 }
 
 export default function ProducaoPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [loading, setLoading] = useState(true);
   const [movendo, setMovendo] = useState<string | null>(null);
+  const [filtroEtapa, setFiltroEtapa] = useState<string>(() => searchParams.get('statusProducao') || searchParams.get('etapa') || '');
   const { showSuccess, showError } = useToast();
-
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/projetos?limit=100')
+    const sp = searchParams.get('statusProducao') || searchParams.get('etapa');
+    if (sp) setFiltroEtapa(sp);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('limit', '100');
+    if (filtroEtapa) params.set('statusProducao', filtroEtapa);
+    fetch(`/api/projetos?${params.toString()}`)
       .then((r) => r.json())
       .then((data) => {
         const list = data?.data ?? (Array.isArray(data) ? data : []);
@@ -56,7 +66,7 @@ export default function ProducaoPage() {
         setErro('Erro ao carregar projetos. Tente recarregar a página.');
         setLoading(false);
       });
-  }, []);
+  }, [filtroEtapa]);
 
   async function avancarEtapa(projetoId: string, novoStatus: string) {
     setMovendo(projetoId);
@@ -97,16 +107,51 @@ export default function ProducaoPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">Central de produção</h1>
       <p className="text-sm text-slate-500">
-        Toque no projeto para abrir. Use <strong>Próxima etapa</strong> para avançar. No celular: use o botão grande em cada card.
+        Toque no projeto para abrir. Arraste o card para outra coluna para avançar etapa, ou use o botão &quot;Próxima etapa&quot;.
       </p>
 
-      {/* Visual em colunas (desktop) / lista por etapa (mobile com scroll horizontal) */}
+      <div className="card flex flex-wrap items-end gap-4">
+        <div>
+          <label htmlFor="filtro-etapa" className="label">Filtrar por etapa</label>
+          <select
+            id="filtro-etapa"
+            className="input w-56"
+            value={filtroEtapa}
+            onChange={(e) => setFiltroEtapa(e.target.value)}
+          >
+            <option value="">Todas as etapas</option>
+            {ETAPAS_ORDEM.map((e) => (
+              <option key={e.id} value={e.id}>{e.titulo}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="overflow-x-auto pb-4">
         <div className="flex min-w-max gap-4">
           {porColuna.map((col) => (
             <div
               key={col.id}
               className="w-72 flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.add('ring-2', 'ring-camarpe-400');
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove('ring-2', 'ring-camarpe-400');
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('ring-2', 'ring-camarpe-400');
+                const raw = e.dataTransfer.getData('text/plain');
+                if (raw?.startsWith('projeto:')) {
+                  const id = raw.replace(/^projeto:/, '');
+                  if (id && col.id) {
+                    const p = projetos.find((x) => x.id === id);
+                    if (p && p.statusProducao !== col.id) avancarEtapa(id, col.id);
+                  }
+                }
+              }}
             >
               <h2 className="mb-3 font-semibold text-slate-700">{col.titulo}</h2>
               <div className="space-y-3">
@@ -116,31 +161,41 @@ export default function ProducaoPage() {
                   return (
                     <div
                       key={p.id}
-                      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                      draggable
+                      onDragStart={(ev) => {
+                        ev.dataTransfer.setData('text/plain', `projeto:${p.id}`);
+                        ev.dataTransfer.effectAllowed = 'move';
+                      }}
+                      className={`cursor-grab rounded-xl border border-slate-200 bg-white p-4 shadow-sm active:cursor-grabbing ${movendo === p.id ? 'opacity-60' : ''}`}
                     >
-                      <Link
-                        href={`/projetos/${p.id}`}
-                        className="block font-medium text-slate-800 hover:text-camarpe-600"
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => router.push(`/projetos/${p.id}`)}
+                        onKeyDown={(e) => e.key === 'Enter' && router.push(`/projetos/${p.id}`)}
+                        className="focus:outline-none"
                       >
-                        {p.nome}
-                      </Link>
-                      {p.lead && (
-                        <p className="mt-1 text-sm text-slate-500">{p.lead.nome}</p>
-                      )}
-                      {(p.dataEntregaPrevista || p.updatedAt) && (
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="font-medium text-slate-800 hover:text-camarpe-600">{p.nome}</p>
+                        {p.lead && (
+                          <p className="mt-1 text-sm text-slate-500">{p.lead.nome}</p>
+                        )}
+                        <p className="mt-2 text-xs font-medium text-slate-600">
+                          Entrega prevista:{' '}
                           {p.dataEntregaPrevista
-                            ? `Entrega prev.: ${new Date(p.dataEntregaPrevista).toLocaleDateString('pt-BR')}`
-                            : `Atualizado: ${new Date(p.updatedAt || '').toLocaleDateString('pt-BR')}`}
+                            ? new Date(p.dataEntregaPrevista).toLocaleDateString('pt-BR')
+                            : '—'}
                         </p>
-                      )}
+                      </div>
                       <div className="mt-3 flex flex-col gap-2">
                         {next ? (
                           <button
                             type="button"
                             disabled={movendo === p.id}
                             className="w-full rounded-lg bg-camarpe-600 py-2.5 text-sm font-medium text-white hover:bg-camarpe-700 disabled:opacity-50"
-                            onClick={() => avancarEtapa(p.id, next)}
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              avancarEtapa(p.id, next);
+                            }}
                           >
                             {movendo === p.id ? '...' : `Próxima etapa → ${labelNext}`}
                           </button>
@@ -153,6 +208,7 @@ export default function ProducaoPage() {
                             if (v && v !== p.statusProducao) avancarEtapa(p.id, v);
                             e.target.value = '';
                           }}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">Saltar para...</option>
                           {ETAPAS_ORDEM.filter((e) => e.id !== p.statusProducao).map((e) => (

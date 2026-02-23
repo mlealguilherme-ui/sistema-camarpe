@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Phone, MessageCircle } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 
 interface Contato {
@@ -78,14 +79,18 @@ export default function TelefonesUteisPage() {
       <h1 className="text-2xl font-bold text-slate-800">Telefones úteis</h1>
       <p className="text-sm text-slate-500">Fornecedores, parceiros e contatos frequentes.</p>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <input
-          type="text"
-          className="input w-64"
-          placeholder="Buscar por nome ou telefone"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="min-w-[200px] flex-1">
+          <label htmlFor="busca-contatos" className="label">Buscar (nome ou número)</label>
+          <input
+            id="busca-contatos"
+            type="text"
+            className="input w-full"
+            placeholder="Digite nome ou telefone..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
         <button type="button" className="btn-primary" onClick={() => setShowNovo(true)}>
           + Novo contato
         </button>
@@ -117,19 +122,35 @@ export default function TelefonesUteisPage() {
           <p className="p-4 text-slate-500">Nenhum contato.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {list.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-slate-50">
-                <span className="font-medium text-slate-800">{c.nome}</span>
-                <a
-                  href={`https://wa.me/55${c.telefone.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded bg-green-600 px-2 py-1 text-sm text-white hover:bg-green-700"
-                >
-                  {formatarTel(c.telefone)} (WhatsApp)
-                </a>
-              </li>
-            ))}
+            {list.map((c) => {
+              const telDigits = c.telefone.replace(/\D/g, '');
+              const telHref = telDigits.length >= 10 ? `tel:+55${telDigits}` : `tel:${c.telefone}`;
+              return (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-slate-50">
+                  <span className="font-medium text-slate-800">{c.nome}</span>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={telHref}
+                      className="inline-flex items-center gap-1.5 rounded bg-navy-600 px-3 py-1.5 text-sm text-white hover:bg-navy-700"
+                      aria-label={`Ligar para ${c.nome}`}
+                    >
+                      <Phone size={16} />
+                      <span className="hidden sm:inline">Ligar</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/55${telDigits}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
+                      aria-label={`WhatsApp para ${c.nome}`}
+                    >
+                      <MessageCircle size={16} />
+                      <span className="hidden sm:inline">WhatsApp</span>
+                    </a>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

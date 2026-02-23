@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -55,7 +56,8 @@ export default function SugestoesClient({ podeAlterarStatus }: SugestoesClientPr
     fetch(`/api/sugestoes?${params}`)
       .then((r) => r.json())
       .then((d) => {
-        setList(Array.isArray(d) ? d : []);
+        const arr = Array.isArray(d) ? d : [];
+        setList([...arr].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -147,6 +149,28 @@ export default function SugestoesClient({ podeAlterarStatus }: SugestoesClientPr
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(STATUS_LABEL).map(([k, v]) => {
+          const count = list.filter((s) => s.status === k).length;
+          return (
+            <span
+              key={k}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                filtroStatus === k ? 'ring-2 ring-offset-1 ring-slate-400' : ''
+              } ${
+                k === 'NOVA' ? 'bg-blue-100 text-blue-800' :
+                k === 'EM_DISCUSSAO' ? 'bg-amber-100 text-amber-800' :
+                k === 'IMPLEMENTADA' ? 'bg-green-100 text-green-800' :
+                k === 'ARQUIVADA' ? 'bg-slate-200 text-slate-600' :
+                'bg-camarpe-100 text-camarpe-800'
+              }`}
+            >
+              {v} <span className="font-semibold">{count}</span>
+            </span>
+          );
+        })}
+      </div>
+
       {showForm && (
         <form onSubmit={handleSubmit} className="card max-w-xl space-y-3">
           <h2 className="font-semibold text-slate-800">Registrar sugestão ou ideia</h2>
@@ -199,14 +223,19 @@ export default function SugestoesClient({ podeAlterarStatus }: SugestoesClientPr
                     <p className="mt-1 text-xs text-slate-500">
                       {s.usuario.nome}
                       {s.etapa && ` · ${s.etapa}`}
-                      {s.projeto && (
-                        <a href={`/projetos/${s.projeto.id}`} className="ml-1 text-camarpe-600 hover:underline">
-                          · {s.projeto.nome}
-                        </a>
-                      )}
                       {' · '}
                       {new Date(s.createdAt).toLocaleDateString('pt-BR')} às {new Date(s.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
+                    {s.projeto && (
+                      <p className="mt-2">
+                        <Link
+                          href={`/projetos/${s.projeto.id}`}
+                          className="inline-flex items-center rounded border border-camarpe-200 bg-camarpe-50/80 px-2.5 py-1 text-sm font-medium text-camarpe-800 hover:bg-camarpe-100"
+                        >
+                          Ver projeto: {s.projeto.nome} →
+                        </Link>
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span

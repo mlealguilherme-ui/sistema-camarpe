@@ -7,9 +7,9 @@ import DashboardClient from './DashboardClient';
 
 const DASHBOARD_CACHE_SECONDS = 60;
 
-async function getDashboardDataUncached() {
+async function getDashboardDataUncached(months: number = 6) {
   const hoje = new Date();
-  const seisMesesAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+  const mesesAtras = new Date(hoje.getFullYear(), hoje.getMonth() - (months - 1), 1);
   const seteDias = new Date(hoje);
   seteDias.setDate(seteDias.getDate() + 7);
   const cincoDiasAtras = new Date(hoje);
@@ -70,17 +70,17 @@ async function getDashboardDataUncached() {
   };
   const porOrigem: Record<string, number> = {};
   const porMes: { mes: string; total: number }[] = [];
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(hoje.getFullYear(), hoje.getMonth() - (5 - i), 1);
+  for (let i = 0; i < months; i++) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - (months - 1 - i), 1);
     porMes.push({ mes: `${d.getMonth() + 1}/${d.getFullYear()}`, total: 0 });
   }
   for (const l of leads) {
     byStatus[l.status]++;
     porOrigem[l.origem] = (porOrigem[l.origem] || 0) + 1;
     const created = new Date(l.createdAt);
-    if (created >= seisMesesAtras) {
-      const idx = Math.min(5, Math.max(0, (created.getFullYear() - seisMesesAtras.getFullYear()) * 12 + created.getMonth() - seisMesesAtras.getMonth()));
-      if (idx >= 0 && idx < 6) porMes[idx].total++;
+    if (created >= mesesAtras) {
+      const idx = Math.min(months - 1, Math.max(0, (created.getFullYear() - mesesAtras.getFullYear()) * 12 + created.getMonth() - mesesAtras.getMonth()));
+      if (idx >= 0 && idx < months) porMes[idx].total++;
     }
   }
   const totalLeads = leads.length;
@@ -97,16 +97,16 @@ async function getDashboardDataUncached() {
   }
 
   const faturamentoPorMes: { mes: string; valor: number }[] = [];
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(hoje.getFullYear(), hoje.getMonth() - (5 - i), 1);
+  for (let i = 0; i < months; i++) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - (months - 1 - i), 1);
     faturamentoPorMes.push({ mes: `${d.getMonth() + 1}/${d.getFullYear()}`, valor: 0 });
   }
   for (const pag of pagamentos) {
     if (!pag.data) continue;
     const d = new Date(pag.data);
-    if (d >= seisMesesAtras) {
-      const idx = Math.min(5, Math.max(0, (d.getFullYear() - seisMesesAtras.getFullYear()) * 12 + d.getMonth() - seisMesesAtras.getMonth()));
-      if (idx >= 0 && idx < 6) faturamentoPorMes[idx].valor += Number(pag.valor);
+    if (d >= mesesAtras) {
+      const idx = Math.min(months - 1, Math.max(0, (d.getFullYear() - mesesAtras.getFullYear()) * 12 + d.getMonth() - mesesAtras.getMonth()));
+      if (idx >= 0 && idx < months) faturamentoPorMes[idx].valor += Number(pag.valor);
     }
   }
 
@@ -173,12 +173,24 @@ async function getDashboardDataUncached() {
   };
 }
 
-const getDashboardData = unstable_cache(getDashboardDataUncached, ['dashboard-data'], { revalidate: DASHBOARD_CACHE_SECONDS });
+function getDashboardData(period: number) {
+  return unstable_cache(
+    () => getDashboardDataUncached(period),
+    ['dashboard-data', String(period)],
+    { revalidate: DASHBOARD_CACHE_SECONDS }
+  )();
+}
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }> | { period?: string };
+}) {
   const session = await getSession();
   if (!session) redirect('/login');
   if (!['GESTAO', 'COMERCIAL', 'ADMIN'].includes(session.role)) redirect('/producao');
-  const data = await getDashboardData();
-  return <DashboardClient data={data} />;
+  const params = await Promise.resolve(searchParams).catch(() => ({}));
+  const period = params?.period === '12' ? 12 : 6;
+  const data = await getDashboardData(period);
+  return <DashboardClient data={data} period={period} />;
 }

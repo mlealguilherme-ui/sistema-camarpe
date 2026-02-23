@@ -22,6 +22,7 @@ export default function CredenciaisClient() {
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState('');
   const [senhaVisivel, setSenhaVisivel] = useState<Record<string, string>>({});
+  const [mostrarSenhaForm, setMostrarSenhaForm] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -127,7 +128,23 @@ export default function CredenciaisClient() {
           </div>
           <div>
             <label className="label">Senha *</label>
-            <input type="password" className="input" value={senha} onChange={(e) => setSenha(e.target.value)} />
+            <div className="flex gap-2">
+              <input
+                type={mostrarSenhaForm ? 'text' : 'password'}
+                className="input flex-1"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="btn-secondary shrink-0"
+                onClick={() => setMostrarSenhaForm((v) => !v)}
+                title={mostrarSenhaForm ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {mostrarSenhaForm ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
           </div>
           {erro && <p className="text-sm text-red-600">{erro}</p>}
           <div className="flex gap-2">

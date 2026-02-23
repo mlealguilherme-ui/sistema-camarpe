@@ -16,10 +16,19 @@ interface Resposta {
   alertas: ItemEstoque[];
 }
 
+function ordenarAlertasPorUrgencia(alertas: ItemEstoque[]): ItemEstoque[] {
+  return [...alertas].sort((a, b) => {
+    const deficitA = a.quantidadeMinima - a.quantidadeAtual;
+    const deficitB = b.quantidadeMinima - b.quantidadeAtual;
+    return deficitB - deficitA;
+  });
+}
+
 export default function ComprasPage() {
   const [itens, setItens] = useState<ItemEstoque[]>([]);
   const [alertas, setAlertas] = useState<ItemEstoque[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState('');
   const [showNovo, setShowNovo] = useState(false);
   const [nome, setNome] = useState('');
   const [quantidadeMinima, setQuantidadeMinima] = useState('1');
@@ -29,6 +38,11 @@ export default function ComprasPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editNome, setEditNome] = useState('');
   const [editMinimo, setEditMinimo] = useState('');
+
+  const alertasOrdenados = ordenarAlertasPorUrgencia(alertas);
+  const itensFiltrados = busca.trim()
+    ? itens.filter((i) => i.nome.toLowerCase().includes(busca.trim().toLowerCase()))
+    : itens;
 
   useEffect(() => {
     fetch('/api/estoque-alerta')
@@ -149,9 +163,9 @@ export default function ComprasPage() {
 
       {alertas.length > 0 && (
         <div className="card border-amber-200 bg-amber-50/50">
-          <h2 className="mb-2 font-semibold text-amber-800">Alertas — abaixo do mínimo</h2>
+          <h2 className="mb-2 font-semibold text-amber-800">Alertas — abaixo do mínimo (mais urgente primeiro)</h2>
           <ul className="space-y-1">
-            {alertas.map((a) => (
+            {alertasOrdenados.map((a) => (
               <li key={a.id} className="flex items-center justify-between gap-2">
                 <span>
                   <strong>{a.nome}</strong>: {a.quantidadeAtual} / {a.quantidadeMinima} (comprar
@@ -235,11 +249,26 @@ export default function ComprasPage() {
       )}
 
       <div className="card">
-        <h2 className="mb-4 font-semibold">Itens com alerta de estoque</h2>
+        <div className="mb-4 flex flex-wrap items-end gap-4">
+          <h2 className="font-semibold">Itens com alerta de estoque</h2>
+          <div className="min-w-[200px] flex-1">
+            <label htmlFor="busca-itens" className="label">Buscar por nome</label>
+            <input
+              id="busca-itens"
+              type="text"
+              className="input w-full"
+              placeholder="Filtrar itens..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+        </div>
         {loading ? (
           <p>Carregando...</p>
         ) : itens.length === 0 ? (
           <p className="text-slate-500">Nenhum item cadastrado.</p>
+        ) : itensFiltrados.length === 0 ? (
+          <p className="text-slate-500">Nenhum item corresponde à busca.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -252,7 +281,7 @@ export default function ComprasPage() {
                 </tr>
               </thead>
               <tbody>
-                {itens.map((item) => (
+                {itensFiltrados.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100">
                     {editId === item.id ? (
                       <>

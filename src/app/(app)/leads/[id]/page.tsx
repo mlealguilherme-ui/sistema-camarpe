@@ -421,9 +421,20 @@ export default function LeadDetailPage() {
             {lead.endereco && (
               <p><span className="font-medium text-slate-700">Endereço:</span> {lead.endereco}</p>
             )}
-            {lead.dataUltimoContato && (
-              <p><span className="font-medium text-slate-700">Último contato:</span> {new Date(lead.dataUltimoContato).toLocaleDateString('pt-BR')}</p>
-            )}
+            {lead.dataUltimoContato && (() => {
+              const d = new Date(lead.dataUltimoContato);
+              const dias = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+              const alerta = dias > 14 ? 'text-red-700 font-medium' : dias > 7 ? 'text-amber-700' : 'text-slate-700';
+              return (
+                <p>
+                  <span className="font-medium text-slate-700">Último contato:</span>{' '}
+                  <span className={alerta}>
+                    {d.toLocaleDateString('pt-BR')}
+                    {dias > 7 && ` (${dias} dias atrás)`}
+                  </span>
+                </p>
+              );
+            })()}
             {(lead.linkOrcamento || lead.linkProjeto3d) && (
               <p className="flex flex-wrap gap-2">
                 {lead.linkOrcamento && (

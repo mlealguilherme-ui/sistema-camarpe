@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth';
 import type { StatusProducao } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 const STATUS: Record<string, string> = {
   AGUARDANDO_ARQUIVOS: 'Aguardando arquivos',
   PARA_CORTE: 'Para corte',
   MONTAGEM: 'Montagem',
+  FITAGEM: 'Fitagem',
+  PAUSADO: 'Pausado',
   INSTALACAO: 'Instalação',
   ENTREGUE: 'Entregue',
 };
@@ -24,10 +27,24 @@ export async function GET(request: NextRequest) {
     requireRole(session, ['COMERCIAL', 'GESTAO', 'ADMIN']);
     const { searchParams } = new URL(request.url);
     const statusProducao = searchParams.get('statusProducao') as StatusProducao | null;
-    const where: { statusProducao?: StatusProducao } = {};
+    const busca = searchParams.get('busca')?.trim() || searchParams.get('search')?.trim() || null;
+    const periodoDe = searchParams.get('periodoDe')?.trim() || null;
+    const periodoAte = searchParams.get('periodoAte')?.trim() || null;
+    const where: Prisma.ProjetoWhereInput = {};
     if (statusProducao) where.statusProducao = statusProducao;
+    if (busca) {
+      where.OR = [
+        { nome: { contains: busca, mode: 'insensitive' } },
+        { lead: { nome: { contains: busca, mode: 'insensitive' } } },
+      ];
+    }
+    if (periodoDe || periodoAte) {
+      where.createdAt = {};
+      if (periodoDe) where.createdAt.gte = new Date(periodoDe + 'T00:00:00.000Z');
+      if (periodoAte) where.createdAt.lte = new Date(periodoAte + 'T23:59:59.999Z');
+    }
     const projetos = await prisma.projeto.findMany({
-      where,
+      where: Object.keys(where).length ? where : undefined,
       orderBy: { updatedAt: 'desc' },
       include: { lead: { select: { nome: true, telefone: true } } },
     });

@@ -34,11 +34,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as StatusLead | null;
     const origem = searchParams.get('origem') as OrigemLead | null;
-    const where: { status?: StatusLead; origem?: OrigemLead } = {};
+    const search = searchParams.get('search')?.trim() || searchParams.get('q')?.trim() || '';
+    const where: { status?: StatusLead; origem?: OrigemLead; OR?: Array<{ nome: { contains: string; mode: 'insensitive' } } | { telefone: { contains: string } }> } } = {};
     if (status) where.status = status;
     if (origem) where.origem = origem;
+    if (search.length > 0) {
+      where.OR = [
+        { nome: { contains: search, mode: 'insensitive' } },
+        { telefone: { contains: search } },
+      ];
+    }
     const leads = await prisma.lead.findMany({
-      where,
+      where: Object.keys(where).length ? where : undefined,
       orderBy: { updatedAt: 'desc' },
       include: { projetos: { select: { nome: true } } },
     });

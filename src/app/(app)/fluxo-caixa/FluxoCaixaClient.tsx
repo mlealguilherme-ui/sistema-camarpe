@@ -188,6 +188,37 @@ export default function FluxoCaixaClient() {
     return <div className="card">Carregando...</div>;
   }
 
+  const [y, m] = mesFiltro.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const diasDoMes = Array.from({ length: lastDay }, (_, i) => i + 1);
+  const porDia: { dia: number; entradas: number; saidas: number }[] = diasDoMes.map((dia) => {
+    let entradas = 0;
+    let saidas = 0;
+    const dayStr = `${y}-${String(m).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    for (const mov of relatorio?.movimentacoes ?? []) {
+      const d = mov.data.slice(0, 10);
+      if (d !== dayStr) continue;
+      const v = mov.valor;
+      if (mov.tipo === 'ENTRADA') entradas += v;
+      else saidas += v;
+    }
+    for (const p of relatorio?.pagamentosProjetos ?? []) {
+      const d = p.data.slice(0, 10);
+      if (d === dayStr) entradas += p.valor;
+    }
+    return { dia, entradas, saidas };
+  });
+  const maxVal = Math.max(1, ...porDia.flatMap((d) => [d.entradas, d.saidas]));
+
+  const em30Dias = new Date(hoje);
+  em30Dias.setDate(em30Dias.getDate() + 30);
+  const contasProximos30 = contasAPagar.filter((c) => {
+    if (!c.dataVencimento) return false;
+    const v = new Date(c.dataVencimento);
+    return v >= hoje && v <= em30Dias;
+  });
+  const totalProximos30 = contasProximos30.reduce((acc, c) => acc + c.valor, 0);
+
   const entradasList = [
     ...(lancamentos.filter((m) => m.tipo === 'ENTRADA')),
     ...(relatorio?.pagamentosProjetos ?? []).map((p) => ({
@@ -244,6 +275,43 @@ export default function FluxoCaixaClient() {
             <p className="text-lg font-bold text-camarpe-700">{fmt(relatorio?.entradasProjetos ?? 0)}</p>
           </div>
         </div>
+
+        {relatorio?.mes && (
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <p className="mb-3 text-sm font-medium text-slate-600">Gráfico do mês — Entradas x Saídas por dia</p>
+            <div className="flex gap-px overflow-x-auto pb-2" style={{ minHeight: '100px' }}>
+              {porDia.map((d) => (
+                <div key={d.dia} className="flex min-w-[20px] flex-1 flex-col items-center gap-0.5" title={`Dia ${d.dia}: Entradas ${fmt(d.entradas)} | Saídas ${fmt(d.saidas)}`}>
+                  <div className="flex w-full flex-1 items-end justify-center gap-0.5" style={{ minHeight: '72px' }}>
+                    <div
+                      className="w-full min-w-[6px] rounded-t bg-green-500"
+                      style={{ height: `${(d.entradas / maxVal) * 70}px`, minHeight: d.entradas > 0 ? 4 : 0 }}
+                    />
+                    <div
+                      className="w-full min-w-[6px] rounded-t bg-red-500"
+                      style={{ height: `${(d.saidas / maxVal) * 70}px`, minHeight: d.saidas > 0 ? 4 : 0 }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500">{d.dia}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex gap-4 text-xs text-slate-500">
+              <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-green-500" /> Entradas</span>
+              <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-red-500" /> Saídas</span>
+            </div>
+          </div>
+        )}
+
+        {(contasProximos30.length > 0 || totalProximos30 > 0) && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+            <p className="text-sm font-medium text-amber-800">Previsão — Próximos 30 dias</p>
+            <p className="mt-1 text-slate-700">
+              Saídas previstas (contas a vencer): <strong>{fmt(totalProximos30)}</strong>
+              {contasProximos30.length > 0 && ` (${contasProximos30.length} conta${contasProximos30.length === 1 ? '' : 's'})`}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-slate-200">
